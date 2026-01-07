@@ -9,11 +9,11 @@ interface ProcessMetricsCardsProps {
 }
 export function ProcessMetricsCards({ processes, isLoading }: ProcessMetricsCardsProps) {
   const metrics = React.useMemo(() => {
-    if (!processes?.length) {
+    if (!processes.length) {
       return {
         total: 0,
-        latest: 0,
-        outdated: 0,
+        active: 0,
+        inactive: 0,
         recentlyModified: 0
       };
     }
@@ -21,9 +21,9 @@ export function ProcessMetricsCards({ processes, isLoading }: ProcessMetricsCard
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     return {
       total: processes.length,
-      latest: processes.filter(p => p.isLatestVersion).length,
-      outdated: processes.filter(p => !p.isLatestVersion).length,
-      recentlyModified: processes.filter(p =>
+      active: processes.filter(p => p.isActive).length,
+      inactive: processes.filter(p => !p.isActive).length,
+      recentlyModified: processes.filter(p => 
         p.lastModifiedTime && new Date(p.lastModifiedTime) > oneDayAgo
       ).length
     };
@@ -32,7 +32,7 @@ export function ProcessMetricsCards({ processes, isLoading }: ProcessMetricsCard
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i}>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <Skeleton className="h-12 w-12 rounded-lg" />
@@ -57,20 +57,20 @@ export function ProcessMetricsCards({ processes, isLoading }: ProcessMetricsCard
       description: 'All available processes'
     },
     {
-      title: 'Latest Version',
-      value: metrics.latest,
+      title: 'Active Processes',
+      value: metrics.active,
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
-      description: 'Up-to-date processes'
+      description: 'Ready to execute'
     },
     {
-      title: 'Outdated',
-      value: metrics.outdated,
+      title: 'Inactive Processes',
+      value: metrics.inactive,
       icon: AlertTriangle,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
-      description: 'Older versions available'
+      description: 'Not available for execution'
     },
     {
       title: 'Recently Modified',
@@ -86,20 +86,17 @@ export function ProcessMetricsCards({ processes, isLoading }: ProcessMetricsCard
       {metricCards.map((metric) => {
         const Icon = metric.icon;
         return (
-          <Card 
-            key={metric.title} 
-            className="hover:shadow-md transition-all duration-200 hover:scale-105 cursor-pointer"
-          >
+          <Card key={metric.title} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-lg ${metric.bgColor} transition-all duration-200`}>
+                <div className={`p-3 rounded-lg ${metric.bgColor}`}>
                   <Icon className={`h-6 w-6 ${metric.color}`} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     {metric.title}
                   </p>
-                  <p className="text-2xl font-bold text-foreground transition-colors">
+                  <p className="text-2xl font-bold text-foreground">
                     {metric.value}
                   </p>
                   <p className="text-xs text-muted-foreground">

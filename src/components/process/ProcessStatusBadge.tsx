@@ -1,28 +1,22 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 interface ProcessStatusBadgeProps {
-  isLatestVersion: boolean;
+  isActive: boolean;
 }
-export function ProcessStatusBadge({ isLatestVersion }: ProcessStatusBadgeProps) {
-  if (isLatestVersion) {
+export function ProcessStatusBadge({ isActive }: ProcessStatusBadgeProps) {
+  if (isActive) {
     return (
-      <Badge 
-        variant="outline" 
-        className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
-      >
+      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
         <CheckCircle className="h-3 w-3 mr-1" />
-        Latest
+        Available
       </Badge>
     );
   }
   return (
-    <Badge 
-      variant="outline" 
-      className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 transition-colors"
-    >
-      <Clock className="h-3 w-3 mr-1" />
-      Outdated
+    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+      <XCircle className="h-3 w-3 mr-1" />
+      Inactive
     </Badge>
   );
 }
