@@ -19,12 +19,12 @@ interface StartProcessDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-export function StartProcessDialog({ 
-  process, 
-  folderId, 
-  open, 
-  onOpenChange, 
-  onSuccess 
+export function StartProcessDialog({
+  process,
+  folderId,
+  open,
+  onOpenChange,
+  onSuccess
 }: StartProcessDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const startProcessMutation = useStartProcess();
@@ -58,7 +58,7 @@ export function StartProcessDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Play className="h-5 w-5" />
+            <Play className="h-5 w-5 text-primary" />
             Start Process
           </DialogTitle>
           <DialogDescription>
@@ -67,19 +67,23 @@ export function StartProcessDialog({
         </DialogHeader>
         <div className="space-y-4">
           {/* Process Information */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-3 border">
             <div>
               <span className="text-sm font-medium text-muted-foreground">Process Name:</span>
-              <p className="text-sm font-medium">{process.name}</p>
+              <p className="text-sm font-medium text-foreground">{process.name}</p>
             </div>
             <div>
               <span className="text-sm font-medium text-muted-foreground">Version:</span>
-              <p className="text-sm">{process.version}</p>
+              <p className="text-sm text-foreground">{process.processVersion}</p>
+            </div>
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">Key:</span>
+              <p className="text-sm text-foreground font-mono">{process.key}</p>
             </div>
             {process.description && (
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Description:</span>
-                <p className="text-sm">{process.description}</p>
+                <p className="text-sm text-foreground">{process.description}</p>
               </div>
             )}
           </div>
@@ -90,12 +94,12 @@ export function StartProcessDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          {/* Warning for inactive processes */}
-          {!process.isActive && (
+          {/* Warning for outdated processes */}
+          {!process.isLatestVersion && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                This process is currently inactive and may not execute properly.
+                This process is not the latest version. Consider updating to the latest version before execution.
               </AlertDescription>
             </Alert>
           )}
@@ -105,13 +109,14 @@ export function StartProcessDialog({
             variant="outline"
             onClick={handleClose}
             disabled={startProcessMutation.isPending}
+            className="transition-all duration-200"
           >
             Cancel
           </Button>
           <Button
             onClick={handleStartProcess}
-            disabled={startProcessMutation.isPending || !process.isActive}
-            className="min-w-[100px]"
+            disabled={startProcessMutation.isPending}
+            className="min-w-[100px] transition-all duration-200"
           >
             {startProcessMutation.isPending ? (
               <>

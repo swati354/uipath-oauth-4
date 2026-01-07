@@ -1,4 +1,5 @@
 import { format, formatDistanceToNow, isValid } from 'date-fns';
+import type { ProcessGetResponse } from 'uipath-sdk';
 /**
  * Format a process date for display
  */
@@ -22,27 +23,27 @@ export function formatProcessDate(dateString?: string | null): string {
 /**
  * Get status color class for process status
  */
-export function getProcessStatusColor(isActive: boolean): string {
-  return isActive ? 'text-green-600' : 'text-red-600';
+export function getProcessStatusColor(isLatestVersion: boolean): string {
+  return isLatestVersion ? 'text-green-600' : 'text-orange-600';
 }
 /**
  * Get status background color class for process status
  */
-export function getProcessStatusBgColor(isActive: boolean): string {
-  return isActive ? 'bg-green-100' : 'bg-red-100';
+export function getProcessStatusBgColor(isLatestVersion: boolean): string {
+  return isLatestVersion ? 'bg-green-100' : 'bg-orange-100';
 }
 /**
  * Filter processes by search query
  */
 export function filterProcessesByQuery(
-  processes: any[], 
+  processes: ProcessGetResponse[],
   query: string
-): any[] {
+): ProcessGetResponse[] {
   if (!query.trim()) {
     return processes;
   }
   const searchTerm = query.toLowerCase();
-  return processes.filter(process => 
+  return processes.filter(process =>
     process.name?.toLowerCase().includes(searchTerm) ||
     process.key?.toLowerCase().includes(searchTerm) ||
     process.description?.toLowerCase().includes(searchTerm)
@@ -52,10 +53,10 @@ export function filterProcessesByQuery(
  * Sort processes by field and direction
  */
 export function sortProcesses(
-  processes: any[], 
-  field: string, 
+  processes: ProcessGetResponse[],
+  field: string,
   direction: 'asc' | 'desc'
-): any[] {
+): ProcessGetResponse[] {
   return [...processes].sort((a, b) => {
     let aValue: any = '';
     let bValue: any = '';
@@ -64,17 +65,17 @@ export function sortProcesses(
         aValue = a.name || '';
         bValue = b.name || '';
         break;
-      case 'version':
-        aValue = a.version || '';
-        bValue = b.version || '';
+      case 'processVersion':
+        aValue = a.processVersion || '';
+        bValue = b.processVersion || '';
         break;
       case 'lastModified':
         aValue = new Date(a.lastModifiedTime || 0).getTime();
         bValue = new Date(b.lastModifiedTime || 0).getTime();
         break;
       case 'status':
-        aValue = a.isActive ? 'active' : 'inactive';
-        bValue = b.isActive ? 'active' : 'inactive';
+        aValue = a.isLatestVersion ? 'latest' : 'outdated';
+        bValue = b.isLatestVersion ? 'latest' : 'outdated';
         break;
       default:
         return 0;
@@ -92,15 +93,54 @@ export function sortProcesses(
 /**
  * Calculate process metrics
  */
-export function calculateProcessMetrics(processes: any[]) {
+export function calculateProcessMetrics(processes: ProcessGetResponse[]) {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   return {
     total: processes.length,
-    active: processes.filter(p => p.isActive).length,
-    inactive: processes.filter(p => !p.isActive).length,
-    recentlyModified: processes.filter(p => 
+    latest: processes.filter(p => p.isLatestVersion).length,
+    outdated: processes.filter(p => !p.isLatestVersion).length,
+    recentlyModified: processes.filter(p =>
       p.lastModifiedTime && new Date(p.lastModifiedTime) > oneDayAgo
     ).length
   };
+}
+/**
+ * Determine if a process can be started
+ */
+export function canStartProcess(process: ProcessGetResponse): boolean {
+  return process.isLatestVersion && !!process.key;
+}
+/**
+ * Get process status text
+ */
+export function getProcessStatusText(process: ProcessGetResponse): string {
+  if (process.isLatestVersion) {
+    return 'Latest Version';
+  }
+  return 'Outdated Version';
+}
+/**
+ * Get process display name with fallback
+ */
+export function getProcessDisplayName(process: ProcessGetResponse): string {
+  return process.name || process.key || 'Unnamed Process';
+}
+/**
+ * Format process version for display
+ */
+export function formatProcessVersion(process: ProcessGetResponse): string {
+  return process.processVersion || 'Unknown';
+}
+/**
+ * Check if process has description
+ */
+export function hasProcessDescription(process: ProcessGetResponse): boolean {
+  return !!(process.description && process.description.trim());
+}
+/**
+ * Get process description with fallback
+ */
+export function getProcessDescription(process: ProcessGetResponse): string {
+  return process.description || 'No description available';
 }

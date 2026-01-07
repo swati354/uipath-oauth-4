@@ -8,33 +8,28 @@
  * - Fetch execution history
  * - Control instances (pause, resume, cancel)
  */
-
 import { useState, useEffect, useCallback } from 'react';
 import { getUiPath } from '../lib/uipath';
 import { toast } from 'sonner';
-import type { MaestroProcessGetAllResponse,ProcessInstanceGetResponse, RawProcessInstanceGetResponse, ProcessInstanceOperationResponse, ProcessInstanceExecutionHistoryResponse, ProcessInstanceGetVariablesResponse, ProcessInstanceGetVariablesOptions } from 'uipath-sdk';
-
+import type { MaestroProcessGetAllResponse,ProcessInstanceGetResponse, RawProcessInstanceGetResponse, ProcessInstanceOperationResponse, ProcessInstanceExecutionHistoryResponse, ProcessInstanceGetVariablesResponse, ProcessInstanceGetVariablesOptions, OperationResponse } from 'uipath-sdk';
 interface UseUiPathMaestroProcessesResult {
 	data?: MaestroProcessGetAllResponse[];
 	isLoading: boolean;
 	error?: Error;
 	refetch: () => Promise<void>;
 }
-
 interface UseUiPathMaestroInstancesResult {
 	data?: RawProcessInstanceGetResponse[];
 	isLoading: boolean;
 	error?: Error;
 	refetch: () => Promise<void>;
 }
-
 interface UseUiPathMaestroInstanceByIdResult {
 	data?: RawProcessInstanceGetResponse;
 	isLoading: boolean;
 	error?: Error;
 	refetch: () => Promise<void>;
 }
-
 /**
  * Fetch all Maestro processes
  */
@@ -42,11 +37,9 @@ export function useUiPathMaestroProcesses(): UseUiPathMaestroProcessesResult {
 	const [data, setData] = useState<MaestroProcessGetAllResponse[]>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const fetchProcesses = useCallback(async (): Promise<void> => {
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.getAll();
@@ -62,15 +55,12 @@ export function useUiPathMaestroProcesses(): UseUiPathMaestroProcessesResult {
 			setIsLoading(false);
 		}
 	}, []);
-
 	useEffect(() => {
 		fetchProcesses();
-
 		// Auto-refresh every 30 seconds
 		const interval = setInterval(fetchProcesses, 30000);
 		return () => clearInterval(interval);
 	}, [fetchProcesses]);
-
 	return {
 		data,
 		isLoading,
@@ -78,7 +68,6 @@ export function useUiPathMaestroProcesses(): UseUiPathMaestroProcessesResult {
 		refetch: fetchProcesses
 	};
 }
-
 /**
  * Fetch all Maestro process instances
  */
@@ -86,11 +75,9 @@ export function useUiPathMaestroInstances(): UseUiPathMaestroInstancesResult {
 	const [data, setData] = useState<RawProcessInstanceGetResponse[]>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const fetchInstances = useCallback(async (): Promise<void> => {
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.instances.getAll();
@@ -106,15 +93,12 @@ export function useUiPathMaestroInstances(): UseUiPathMaestroInstancesResult {
 			setIsLoading(false);
 		}
 	}, []);
-
 	useEffect(() => {
 		fetchInstances();
-
 		// Auto-refresh every 10 seconds for more frequent active monitoring
 		const interval = setInterval(fetchInstances, 10000);
 		return () => clearInterval(interval);
 	}, [fetchInstances]);
-
 	return {
 		data,
 		isLoading,
@@ -122,7 +106,6 @@ export function useUiPathMaestroInstances(): UseUiPathMaestroInstancesResult {
 		refetch: fetchInstances
 	};
 }
-
 /**
  * Fetch a single Maestro process instance by ID
  *
@@ -138,15 +121,11 @@ export function useUiPathMaestroInstanceById(
 	const [data, setData] = useState<RawProcessInstanceGetResponse>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const enabled = options?.enabled !== false && !!instanceId && !!folderKey;
-
 	const fetchInstance = useCallback(async (): Promise<void> => {
 		if (!instanceId || !folderKey || !enabled) return;
-
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result: ProcessInstanceGetResponse = await uipath.maestro.processes.instances.getById(instanceId, folderKey);
@@ -158,17 +137,14 @@ export function useUiPathMaestroInstanceById(
 			setIsLoading(false);
 		}
 	}, [instanceId, folderKey, enabled]);
-
 	useEffect(() => {
 		fetchInstance();
-
 		// Auto-refresh every 5 seconds if enabled for frequent real-time instance monitoring
 		if (enabled) {
 			const interval = setInterval(fetchInstance, 5000);
 			return () => clearInterval(interval);
 		}
 	}, [fetchInstance, enabled]);
-
 	return {
 		data,
 		isLoading,
@@ -176,20 +152,17 @@ export function useUiPathMaestroInstanceById(
 		refetch: fetchInstance
 	};
 }
-
 interface UsePauseMaestroInstanceResult {
 	mutate: (params: { instanceId: string; folderKey: string; comment?: string; onSuccess?: (data: ProcessInstanceOperationResponse) => void }) => Promise<ProcessInstanceOperationResponse>;
 	isLoading: boolean;
 	error?: Error;
 }
-
 /**
  * Mutation to pause a Maestro process instance
  */
 export function usePauseMaestroInstance(onInstancesRefresh?: () => void): UsePauseMaestroInstanceResult {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const mutate = useCallback(async ({
 		instanceId,
 		folderKey,
@@ -203,7 +176,6 @@ export function usePauseMaestroInstance(onInstancesRefresh?: () => void): UsePau
 	}): Promise<ProcessInstanceOperationResponse> => {
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.instances.pause(
@@ -211,7 +183,9 @@ export function usePauseMaestroInstance(onInstancesRefresh?: () => void): UsePau
 				folderKey,
 				comment ? { comment } : undefined
 			);
-			const data = result as ProcessInstanceOperationResponse;
+			// Handle OperationResponse wrapper properly
+			const operationResponse = result as OperationResponse<ProcessInstanceOperationResponse>;
+			const data = operationResponse.data || operationResponse as ProcessInstanceOperationResponse;
 			toast.success('Maestro instance paused');
 			onSuccess?.(data);
 			onInstancesRefresh?.();
@@ -225,27 +199,23 @@ export function usePauseMaestroInstance(onInstancesRefresh?: () => void): UsePau
 			setIsLoading(false);
 		}
 	}, [onInstancesRefresh]);
-
 	return {
 		mutate,
 		isLoading,
 		error
 	};
 }
-
 interface UseResumeMaestroInstanceResult {
 	mutate: (params: { instanceId: string; folderKey: string; comment?: string; onSuccess?: (data: ProcessInstanceOperationResponse) => void }) => Promise<ProcessInstanceOperationResponse>;
 	isLoading: boolean;
 	error?: Error;
 }
-
 /**
  * Mutation to resume a Maestro process instance
  */
 export function useResumeMaestroInstance(onInstancesRefresh?: () => void): UseResumeMaestroInstanceResult {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const mutate = useCallback(async ({
 		instanceId,
 		folderKey,
@@ -259,7 +229,6 @@ export function useResumeMaestroInstance(onInstancesRefresh?: () => void): UseRe
 	}): Promise<ProcessInstanceOperationResponse> => {
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.instances.resume(
@@ -267,7 +236,9 @@ export function useResumeMaestroInstance(onInstancesRefresh?: () => void): UseRe
 				folderKey,
 				comment ? { comment } : undefined
 			);
-			const data = result as ProcessInstanceOperationResponse;
+			// Handle OperationResponse wrapper properly
+			const operationResponse = result as OperationResponse<ProcessInstanceOperationResponse>;
+			const data = operationResponse.data || operationResponse as ProcessInstanceOperationResponse;
 			toast.success('Maestro instance resumed');
 			onSuccess?.(data);
 			onInstancesRefresh?.();
@@ -281,27 +252,23 @@ export function useResumeMaestroInstance(onInstancesRefresh?: () => void): UseRe
 			setIsLoading(false);
 		}
 	}, [onInstancesRefresh]);
-
 	return {
 		mutate,
 		isLoading,
 		error
 	};
 }
-
 interface UseCancelMaestroInstanceResult {
 	mutate: (params: { instanceId: string; folderKey: string; comment?: string; onSuccess?: (data: ProcessInstanceOperationResponse) => void }) => Promise<ProcessInstanceOperationResponse>;
 	isLoading: boolean;
 	error?: Error;
 }
-
 /**
  * Mutation to cancel a Maestro process instance
  */
 export function useCancelMaestroInstance(onInstancesRefresh?: () => void): UseCancelMaestroInstanceResult {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const mutate = useCallback(async ({
 		instanceId,
 		folderKey,
@@ -315,7 +282,6 @@ export function useCancelMaestroInstance(onInstancesRefresh?: () => void): UseCa
 	}): Promise<ProcessInstanceOperationResponse> => {
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.instances.cancel(
@@ -323,7 +289,9 @@ export function useCancelMaestroInstance(onInstancesRefresh?: () => void): UseCa
 				folderKey,
 				comment ? { comment } : undefined
 			);
-			const data = result as ProcessInstanceOperationResponse;
+			// Handle OperationResponse wrapper properly
+			const operationResponse = result as OperationResponse<ProcessInstanceOperationResponse>;
+			const data = operationResponse.data || operationResponse as ProcessInstanceOperationResponse;
 			toast.success('Maestro instance cancelled');
 			onSuccess?.(data);
 			onInstancesRefresh?.();
@@ -337,21 +305,18 @@ export function useCancelMaestroInstance(onInstancesRefresh?: () => void): UseCa
 			setIsLoading(false);
 		}
 	}, [onInstancesRefresh]);
-
 	return {
 		mutate,
 		isLoading,
 		error
 	};
 }
-
 interface UseUiPathMaestroBpmnDiagramResult {
 	data?: string;
 	isLoading: boolean;
 	error?: Error;
 	refetch: () => Promise<void>;
 }
-
 /**
  * Fetch BPMN diagram for a Maestro process instance
  *
@@ -370,15 +335,11 @@ export function useUiPathMaestroBpmnDiagram(
 	const [data, setData] = useState<string>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const enabled = options?.enabled !== false && !!instanceId && !!folderKey;
-
 	const fetchBpmnDiagram = useCallback(async (): Promise<void> => {
 		if (!instanceId || !folderKey || !enabled) return;
-
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.instances.getBpmn(instanceId, folderKey);
@@ -390,17 +351,14 @@ export function useUiPathMaestroBpmnDiagram(
 			setIsLoading(false);
 		}
 	}, [instanceId, folderKey, enabled]);
-
 	useEffect(() => {
 		fetchBpmnDiagram();
-
 		// Auto-refresh every 10 seconds if enabled for moderate refresh to update execution status in diagram
 		if (enabled) {
 			const interval = setInterval(fetchBpmnDiagram, 10000);
 			return () => clearInterval(interval);
 		}
 	}, [fetchBpmnDiagram, enabled]);
-
 	return {
 		data,
 		isLoading,
@@ -408,14 +366,12 @@ export function useUiPathMaestroBpmnDiagram(
 		refetch: fetchBpmnDiagram
 	};
 }
-
 interface UseUiPathMaestroExecutionHistoryResult {
 	data?: ProcessInstanceExecutionHistoryResponse[];
 	isLoading: boolean;
 	error?: Error;
 	refetch: () => Promise<void>;
 }
-
 /**
  * Fetch execution history for a Maestro process instance
  *
@@ -432,15 +388,11 @@ export function useUiPathMaestroExecutionHistory(
 	const [data, setData] = useState<ProcessInstanceExecutionHistoryResponse[]>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const enabled = options?.enabled !== false && !!instanceId;
-
 	const fetchExecutionHistory = useCallback(async (): Promise<void> => {
 		if (!instanceId || !enabled) return;
-
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result = await uipath.maestro.processes.instances.getExecutionHistory(instanceId);
@@ -452,17 +404,14 @@ export function useUiPathMaestroExecutionHistory(
 			setIsLoading(false);
 		}
 	}, [instanceId, enabled]);
-
 	useEffect(() => {
 		fetchExecutionHistory();
-
 		// Auto-refresh every 5 seconds if enabled for frequent updates for real-time execution tracking
 		if (enabled) {
 			const interval = setInterval(fetchExecutionHistory, 5000);
 			return () => clearInterval(interval);
 		}
 	}, [fetchExecutionHistory, enabled]);
-
 	return {
 		data,
 		isLoading,
@@ -470,14 +419,12 @@ export function useUiPathMaestroExecutionHistory(
 		refetch: fetchExecutionHistory
 	};
 }
-
 interface UseUiPathMaestroVariablesResult {
 	data?: ProcessInstanceGetVariablesResponse;
 	isLoading: boolean;
 	error?: Error;
 	refetch: () => Promise<void>;
 }
-
 /**
  * Fetch global variables for a Maestro process instance
  *
@@ -493,7 +440,7 @@ interface UseUiPathMaestroVariablesResult {
  * @param folderKey - The folder key where the instance resides
  * @param variableOptions - Optional parameters for filtering variables (e.g., parentElementId)
  * @param queryOptions - Optional query options
- * 
+ *
  *
  */
 export function useUiPathMaestroVariables(
@@ -505,15 +452,11 @@ export function useUiPathMaestroVariables(
 	const [data, setData] = useState<ProcessInstanceGetVariablesResponse>();
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error>();
-
 	const enabled = queryOptions?.enabled !== false && !!instanceId && !!folderKey;
-
 	const fetchVariables = useCallback(async (): Promise<void> => {
 		if (!instanceId || !folderKey || !enabled) return;
-
 		setIsLoading(true);
 		setError(undefined);
-		
 		try {
 			const uipath = getUiPath();
 			const result: ProcessInstanceGetVariablesResponse = await uipath.maestro.processes.instances.getVariables(
@@ -521,7 +464,6 @@ export function useUiPathMaestroVariables(
 				folderKey,
 				variableOptions
 			);
-			
 			setData(result);
 		} catch (error) {
 			console.error(`Failed to fetch variables for instance ${instanceId}:`, error);
@@ -530,17 +472,14 @@ export function useUiPathMaestroVariables(
 			setIsLoading(false);
 		}
 	}, [instanceId, folderKey, variableOptions, enabled]);
-
 	useEffect(() => {
 		fetchVariables();
-
 		// Auto-refresh every 10 seconds if enabled for moderate refresh for variable monitoring
 		if (enabled) {
 			const interval = setInterval(fetchVariables, 10000);
 			return () => clearInterval(interval);
 		}
 	}, [fetchVariables, enabled]);
-
 	return {
 		data,
 		isLoading,
